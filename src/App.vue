@@ -1,15 +1,11 @@
 <script setup lang="ts">
-  import SolarSystem from '@/components/Three/SolarSystem.vue'
-  import Texure from './components/Three/Texure.vue'
-  import Light from './components/Three/light.vue'
+  import Index from './components/Three/Index.vue'
+  import SolarSystem from './components/Three/SolarSystem.vue'
 </script>
 
 <template>
-  <main>
-    <!-- <SolarSystem /> -->
-    <!-- <Texure /> -->
-    <Light />
-  </main>
+  <!-- <SolarSystem /> -->
+  <Index />
 </template>
 
 <style>
