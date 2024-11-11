@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import * as THREE from 'three'
+
   import { onMounted, ref } from 'vue'
   import textureURL from './resources/wall.jpg'
 
@@ -29,7 +30,6 @@
     // light.position.set(-8, 8, 8)
     // scene.add(light)
 
-    // 背景
     const bgGeometry = new THREE.PlaneGeometry(1000, 1000, 8, 8)
     const bgMaterial = new THREE.MeshBasicMaterial({ color: 0xffd6c6 })
     const bg = new THREE.Mesh(bgGeometry, bgMaterial)
