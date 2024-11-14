@@ -1,16 +1,16 @@
 <script setup lang="ts">
   import * as THREE from 'three'
-  import { OrbitControls } from 'three/examples/jsm/Addons.js'
-  import { RGBELoader } from 'three/examples/jsm/Addons.js'
+  import { RGBELoader, GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js'
   import { onMounted, ref, render } from 'vue'
   import hdr from './resources/blue_photo_studio_2k.hdr?url'
   import texture from './resources/checker.png'
-
-  console.log(hdr)
+  import parrotGlb from './resources/Parrot.glb?url'
+  import flamingoGlb from './resources/Flamingo.glb?url'
+  import storkGlb from './resources/Stork.glb?url'
 
   const canvasRef = ref()
 
-  onMounted(() => {
+  onMounted(async () => {
     const canvas = canvasRef.value
     // 场景
     const scene = new THREE.Scene()
@@ -27,9 +27,24 @@
     renderer.shadowMap.type = THREE.PCFSoftShadowMap // 柔和阴影
     // 相机
     const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 1000)
-    camera.position.set(20, -20, 20)
+    camera.position.set(32, -32, 32)
     camera.up.set(0, 0, 1)
     camera.lookAt(new THREE.Vector3(0, 0, 0))
+    // 控制器
+    const controls = new OrbitControls(camera, canvas)
+    controls.target.set(0, 0, 0)
+    controls.enablePan = false // 禁用平移
+    controls.enableZoom = false // 禁用缩放
+    // controls.enableRotate = false // 禁用旋转
+    // controls.listenToKeyEvents(window) // 箭头键平移相机
+    // controls.autoRotate = true // 自动旋转，围绕target
+    // controls.autoRotateSpeed = 1 // 自动旋转速度
+    controls.minAzimuthAngle = -(Math.PI * 1) / 2 // 水平旋转最小角度 [-PI,0]
+    controls.maxAzimuthAngle = (Math.PI * 1) / 2 // 水平旋转最大角度 [0,PI]
+    controls.minPolarAngle = (Math.PI * 1) / 4 // 垂直旋转最小角度 [0,PI/2]
+    controls.maxPolarAngle = (Math.PI * 1.5) / 4 // 垂直旋转最大角度 [PI/2,PI]
+    controls.enableDamping = true // 启用阻尼
+    controls.dampingFactor = 0.1 // 阻尼速度
     // 坐标轴
     const axesHelper = new THREE.AxesHelper(20)
     scene.add(axesHelper)
@@ -37,6 +52,8 @@
     const gridHelper = new THREE.GridHelper(40, 40)
     gridHelper.rotation.x = Math.PI / 2
     scene.add(gridHelper)
+    // 时钟
+    const clock = new THREE.Clock()
 
     // HDR
     const hdrLoader = new RGBELoader()
@@ -62,7 +79,7 @@
     sphere.castShadow = true
     scene.add(sphere)
 
-    // 节
+    // // 节
     const torusKnot = new THREE.Mesh(
       new THREE.TorusKnotGeometry(1, 0.4, 128, 32, 2, 3),
       new THREE.MeshStandardMaterial({
@@ -106,30 +123,80 @@
       metalness: 0.8,
     })
     const protoSphere = new THREE.Mesh(geometry, material)
-    // group.add(protoSphere)
+    protoSphere.castShadow = true
     scene.add(group)
     for (let i = 0; i < 1; i += 0.05) {
       const cloneSphere = protoSphere.clone()
-      cloneSphere.position.x = Math.cos(2 * Math.PI * i) * 4
-      cloneSphere.position.y = Math.sin(2 * Math.PI * i) * 4
+      cloneSphere.position.x = Math.cos(2 * Math.PI * i) * 12
+      cloneSphere.position.y = Math.sin(2 * Math.PI * i) * 12
+      cloneSphere.position.z = Math.sin(2 * Math.PI * 4 * i)
       group.add(cloneSphere)
     }
-    group.position.set(0, 0, 4)
+    group.position.set(0, 0, 2)
+
+    // glTF格式加载3D模型
+    const gltfLoader = new GLTFLoader()
+    const parrotData = await gltfLoader.loadAsync(parrotGlb)
+    const parrotModel = parrotData.scene.children[0]
+    parrotModel.scale.set(0.04, 0.04, 0.04)
+    parrotModel.position.set(0, -8, 4)
+    parrotModel.rotation.set(Math.PI / 2, 0, 0)
+    scene.add(parrotModel)
+    const parrotMixer = new THREE.AnimationMixer(parrotModel)
+    const parrotClip = parrotData.animations[0]
+    const parrotAction = parrotMixer.clipAction(parrotClip)
+    parrotAction.play()
+    parrotModel.castShadow = true
+    parrotModel.receiveShadow = true
+
+    const flamingoData = await gltfLoader.loadAsync(flamingoGlb)
+    const flamingoModel = flamingoData.scene.children[0]
+    flamingoModel.scale.set(0.03, 0.03, 0.03)
+    flamingoModel.position.set(-6, -4, 2)
+    flamingoModel.rotation.set(Math.PI / 2, 0, 0)
+    scene.add(flamingoModel)
+    const flamingoMixer = new THREE.AnimationMixer(flamingoModel)
+    const flamingoClip = flamingoData.animations[0]
+    const flamingoAction = flamingoMixer.clipAction(flamingoClip)
+    flamingoAction.play()
+    flamingoModel.castShadow = true
+    flamingoModel.receiveShadow = true
+
+    const storkData = await gltfLoader.loadAsync(storkGlb)
+    const storkModel = storkData.scene.children[0]
+    storkModel.scale.set(0.03, 0.03, 0.03)
+    storkModel.position.set(6, -4, 2)
+    storkModel.rotation.set(Math.PI / 2, 0, 0)
+    scene.add(storkModel)
+    const storkMixer = new THREE.AnimationMixer(storkModel)
+    const storkClip = storkData.animations[0]
+    const storkAction = storkMixer.clipAction(storkClip)
+    storkAction.play()
+    storkModel.castShadow = true
+    storkModel.receiveShadow = true
 
     // 背景
     const bg = new THREE.Mesh(
-      new THREE.PlaneGeometry(10, 10),
+      new THREE.PlaneGeometry(40, 40),
       new THREE.MeshStandardMaterial({ color: '#C3D8FF', roughness: 0.5, metalness: 0.3, side: THREE.DoubleSide })
     )
-    // bg.receiveShadow = true
+    bg.receiveShadow = true
     scene.add(bg)
 
-    // 平行光
-    const directionalLight = new THREE.DirectionalLight('#fff', 2)
-    directionalLight.position.set(-8, -8, 16)
+    // // 平行光
+    const directionalLight = new THREE.DirectionalLight('#fff', 10)
+    directionalLight.position.set(-10, -10, 20)
+    // 调整阴影摄像机的参数，以适应物体缩放后的大小
+    directionalLight.shadow.camera.left = -100
+    directionalLight.shadow.camera.right = 100
+    directionalLight.shadow.camera.top = 100
+    directionalLight.shadow.camera.bottom = -100
+    // 远近平面（控制阴影的深度范围）
+    directionalLight.shadow.camera.near = 0.1
+    directionalLight.shadow.camera.far = 1000
     directionalLight.castShadow = true
-    directionalLight.shadow.mapSize.width = 512 //阴影分辨率
-    directionalLight.shadow.mapSize.height = 512
+    directionalLight.shadow.mapSize.width = 2048 //阴影分辨率
+    directionalLight.shadow.mapSize.height = 2048
     scene.add(directionalLight)
     // 环境光
     // const ambientLight = new THREE.AmbientLight('red', 0.3)
@@ -138,28 +205,12 @@
     // const hemisphereLight = new THREE.HemisphereLight('white', 'darkslategrey', 5)
     // scene.add(hemisphereLight)
     // 点光
-    const pointLight = new THREE.PointLight('#fff', 200)
+    const pointLight = new THREE.PointLight('#fff', 1000)
     pointLight.position.set(3, -3, 8)
     pointLight.castShadow = true
-    pointLight.shadow.mapSize.width = 512 //阴影分辨率
-    pointLight.shadow.mapSize.height = 512
+    pointLight.shadow.mapSize.width = 2048 //阴影分辨率
+    pointLight.shadow.mapSize.height = 2048
     scene.add(pointLight)
-
-    // 控制器
-    const controls = new OrbitControls(camera, canvas)
-    controls.target.copy(bg.position)
-    controls.enablePan = false // 禁用平移
-    controls.enableZoom = false // 禁用缩放
-    // controls.enableRotate = false // 禁用旋转
-    // controls.listenToKeyEvents(window) // 箭头键平移相机
-    // controls.autoRotate = true // 自动旋转，围绕target
-    // controls.autoRotateSpeed = 1 // 自动旋转速度
-    controls.minAzimuthAngle = -(Math.PI * 1) / 2 // 水平旋转最小角度 [-PI,0]
-    controls.maxAzimuthAngle = (Math.PI * 1) / 2 // 水平旋转最大角度 [0,PI]
-    controls.minPolarAngle = (Math.PI * 1) / 4 // 垂直旋转最小角度 [0,PI/2]
-    controls.maxPolarAngle = (Math.PI * 1.5) / 4 // 垂直旋转最大角度 [PI/2,PI]
-    controls.enableDamping = true // 启用阻尼
-    controls.dampingFactor = 0.1 // 阻尼速度
 
     // 响应式
     window.addEventListener('resize', () => {
@@ -168,24 +219,32 @@
       renderer.setSize(window.innerWidth, window.innerHeight)
     })
 
-    let lastFrameTime = 0
-
-    function animete(currentFrameTime?: number) {
+    function animete(time?: number) {
       requestAnimationFrame(animete)
 
-      // 帧时长 Frame Duration (ms)
-      const frameDuration = currentFrameTime! - lastFrameTime
-      lastFrameTime = currentFrameTime!
+      // 帧间隔（动态）(单位s)
+      const deltaTime = clock.getDelta()
 
-      torusKnot.rotation.z += Math.PI * frameDuration * 0.001 // 每秒旋转180度
-      cube.rotation.z += -Math.PI * frameDuration * 0.0005
-      group.rotation.z += -Math.PI * frameDuration * 0.0001
+      torusKnot.rotation.z += Math.PI * deltaTime // 每秒旋转180度
+      if (cube) {
+        cube.rotation.z += -Math.PI * deltaTime * 0.5
+      }
+      group.rotation.z += Math.PI * deltaTime * 0.1 // 10s一圈
+
+      group.children.forEach((sphere, index) => {
+        const offset = index * 0.5
+        sphere.position.z = Math.sin(Math.PI * (time! * 0.001 + offset)) * 1.2
+      })
+
+      parrotMixer.update(deltaTime)
+      flamingoMixer.update(deltaTime)
+      storkMixer.update(deltaTime)
 
       controls.update()
 
       renderer.render(scene, camera)
     }
-    animete(0)
+    animete()
   })
 </script>
 
