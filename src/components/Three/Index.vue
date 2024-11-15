@@ -1,7 +1,8 @@
 <script setup lang="ts">
   import * as THREE from 'three'
+  import { GUI } from 'lil-gui'
   import { RGBELoader, GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js'
-  import { onMounted, ref, render } from 'vue'
+  import { onMounted, ref } from 'vue'
   import hdr from './resources/blue_photo_studio_2k.hdr?url'
   import texture from './resources/checker.png'
   import parrotGlb from './resources/Parrot.glb?url'
@@ -9,6 +10,14 @@
   import storkGlb from './resources/Stork.glb?url'
 
   const canvasRef = ref()
+
+  const gui = new GUI()
+  const params = {
+    color: '#ffffff',
+    size: 10,
+  }
+  gui.addColor(params, 'color').name('LightColor')
+  gui.add(params, 'size', 1, 50, 1).name('LightIntensity')
 
   onMounted(async () => {
     const canvas = canvasRef.value
@@ -25,26 +34,41 @@
     // 启用阴影
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFSoftShadowMap // 柔和阴影
+    // 开启视图裁剪
+    renderer.setScissorTest(true)
     // 相机
-    const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 1000)
-    camera.position.set(32, -32, 32)
-    camera.up.set(0, 0, 1)
-    camera.lookAt(new THREE.Vector3(0, 0, 0))
+    const cameraA = new THREE.PerspectiveCamera(30, window.innerWidth / 2 / window.innerHeight, 0.1, 1000)
+    cameraA.position.set(32, -32, 48)
+    cameraA.up.set(0, 0, 1)
+    cameraA.lookAt(0, 0, 0)
+    // 相机2
+    const cameraB = new THREE.PerspectiveCamera(30, window.innerWidth / 2 / window.innerHeight, 0.1, 1000)
+    cameraB.position.set(-32, -32, 48)
+    cameraB.up.set(0, 0, 1)
+    cameraB.lookAt(0, 0, 0)
+    // 相机视锥体辅助对象
+    const cameraHelper = new THREE.CameraHelper(cameraA)
+    scene.add(cameraHelper)
     // 控制器
-    const controls = new OrbitControls(camera, canvas)
-    controls.target.set(0, 0, 0)
-    controls.enablePan = false // 禁用平移
-    controls.enableZoom = false // 禁用缩放
+    const controlsA = new OrbitControls(cameraA, document.getElementById('cameraA'))
+    controlsA.target.set(0, 0, 0)
+    const controlsB = new OrbitControls(cameraB, document.getElementById('cameraB'))
+    controlsB.target.set(0, 0, 0)
+
+    // controls.enablePan = false // 禁用平移
+    // controls.enableZoom = false // 禁用缩放
     // controls.enableRotate = false // 禁用旋转
     // controls.listenToKeyEvents(window) // 箭头键平移相机
     // controls.autoRotate = true // 自动旋转，围绕target
     // controls.autoRotateSpeed = 1 // 自动旋转速度
-    controls.minAzimuthAngle = -(Math.PI * 1) / 2 // 水平旋转最小角度 [-PI,0]
-    controls.maxAzimuthAngle = (Math.PI * 1) / 2 // 水平旋转最大角度 [0,PI]
-    controls.minPolarAngle = (Math.PI * 1) / 4 // 垂直旋转最小角度 [0,PI/2]
-    controls.maxPolarAngle = (Math.PI * 1.5) / 4 // 垂直旋转最大角度 [PI/2,PI]
-    controls.enableDamping = true // 启用阻尼
-    controls.dampingFactor = 0.1 // 阻尼速度
+    // controls.minAzimuthAngle = -(Math.PI * 1) / 2 // 水平旋转最小角度 [-PI,0]
+    // controls.maxAzimuthAngle = (Math.PI * 1) / 2 // 水平旋转最大角度 [0,PI]
+    // controls.minPolarAngle = (Math.PI * 1) / 4 // 垂直旋转最小角度 [0,PI/2]
+    // controls.maxPolarAngle = (Math.PI * 1.5) / 4 // 垂直旋转最大角度 [PI/2,PI]
+    controlsA.enableDamping = true // 启用阻尼
+    controlsA.dampingFactor = 0.1 // 阻尼速度
+    controlsB.enableDamping = true // 启用阻尼
+    controlsB.dampingFactor = 0.1 // 阻尼速度
     // 坐标轴
     const axesHelper = new THREE.AxesHelper(20)
     scene.add(axesHelper)
@@ -214,9 +238,11 @@
 
     // 响应式
     window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight
-      camera.updateProjectionMatrix()
       renderer.setSize(window.innerWidth, window.innerHeight)
+      cameraA.aspect = (window.innerWidth * 0.5) / window.innerHeight
+      cameraA.updateProjectionMatrix()
+      cameraB.aspect = (window.innerWidth * 0.5) / window.innerHeight
+      cameraB.updateProjectionMatrix()
     })
 
     function animete(time?: number) {
@@ -240,9 +266,20 @@
       flamingoMixer.update(deltaTime)
       storkMixer.update(deltaTime)
 
-      controls.update()
+      // cameraHelper.update()
+      controlsA.update()
+      controlsB.update()
 
-      renderer.render(scene, camera)
+      // 清除上一帧
+      renderer.clear()
+
+      renderer.setViewport(0, 0, window.innerWidth / 2, window.innerHeight)
+      renderer.setScissor(0, 0, window.innerWidth / 2, window.innerHeight)
+      renderer.render(scene, cameraA)
+
+      renderer.setViewport(window.innerWidth / 2, 0, window.innerWidth / 2, window.innerHeight)
+      renderer.setScissor(window.innerWidth / 2, 0, window.innerWidth / 2, window.innerHeight)
+      renderer.render(scene, cameraB)
     }
     animete()
   })
@@ -250,6 +287,25 @@
 
 <template>
   <canvas ref="canvasRef" width="600" height="400"></canvas>
+  <div id="box">
+    <div id="cameraA"></div>
+    <div id="cameraB"></div>
+  </div>
 </template>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+  #box {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
+    left: 0;
+    top: 0;
+    #cameraA {
+      flex: 1;
+    }
+    #cameraB {
+      flex: 1;
+    }
+  }
+</style>

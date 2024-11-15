@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      lil-gui:
+        specifier: ^0.20.0
+        version: 0.20.0
       sass:
         specifier: ^1.80.6
         version: 1.80.6
@@ -565,6 +568,9 @@ packages:
   json-parse-even-better-errors@4.0.0:
     resolution: {integrity: sha512-lR4MXjGNgkJc7tkQ97kb2nuEMnNCyU//XYVH0MKTGcXEiSudQ5MKGKen3C5QubYy0vmq+JGitUg92uuywGEwIA==}
     engines: {node: ^18.17.0 || >=20.5.0}
+
+  lil-gui@0.20.0:
+    resolution: {integrity: sha512-k7Ipr0ztqslMA2XvM5z5ZaWhxQtnEOwJBfI/hmSuRh6q4iMG9L0boqqrnZSzBR1jzyJ28OMl47l65ILzRe1TdA==}
 
   magic-string@0.30.12:
     resolution: {integrity: sha512-Ea8I3sQMVXr8JhN4z+H/d8zwo+tYDgHE9+5G4Wnrwhs0gaK9fXTKx0Tw5Xwsd/bCPTTZNRAdpyzvoeORe9LYpw==}
@@ -1147,6 +1153,8 @@ snapshots:
   isexe@3.1.1: {}
 
   json-parse-even-better-errors@4.0.0: {}
+
+  lil-gui@0.20.0: {}
 
   magic-string@0.30.12:
     dependencies:
