@@ -1,8 +1,14 @@
 <script setup lang="ts">
   import * as THREE from 'three'
   import { GUI } from 'lil-gui'
-  import { RGBELoader, GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js'
-  import { onMounted, ref } from 'vue'
+  import {
+    RGBELoader,
+    GLTFLoader,
+    OrbitControls,
+    ArcballControls,
+    TransformControls,
+  } from 'three/examples/jsm/Addons.js'
+  import { onMounted, onUnmounted, ref } from 'vue'
   import hdr from './resources/blue_photo_studio_2k.hdr?url'
   import texture from './resources/checker.png'
   import parrotGlb from './resources/Parrot.glb?url'
@@ -12,12 +18,6 @@
   const canvasRef = ref()
 
   const gui = new GUI()
-  const params = {
-    color: '#ffffff',
-    size: 10,
-  }
-  gui.addColor(params, 'color').name('LightColor')
-  gui.add(params, 'size', 1, 50, 1).name('LightIntensity')
 
   onMounted(async () => {
     const canvas = canvasRef.value
@@ -54,7 +54,6 @@
     controlsA.target.set(0, 0, 0)
     const controlsB = new OrbitControls(cameraB, document.getElementById('cameraB'))
     controlsB.target.set(0, 0, 0)
-
     // controls.enablePan = false // 禁用平移
     // controls.enableZoom = false // 禁用缩放
     // controls.enableRotate = false // 禁用旋转
@@ -69,9 +68,35 @@
     controlsA.dampingFactor = 0.1 // 阻尼速度
     controlsB.enableDamping = true // 启用阻尼
     controlsB.dampingFactor = 0.1 // 阻尼速度
+
+    // 弧球控制器
+    const arcballControls = new ArcballControls(cameraA, canvas, scene)
+    arcballControls.addEventListener('change', () => {
+      renderer.render(scene, cameraA)
+    })
+    arcballControls.update()
+
+    // 变换控制器
+    // const transformControls = new TransformControls(cameraB, canvas)
+    // transformControls.setMode('translate')
+    // transformControls.showX = true // 显示 X 轴
+    // transformControls.showY = true // 显示 Y 轴
+    // transformControls.showZ = true // 显示 Z 轴
+
+    // transformControls.addEventListener('dragging-changed', event => {
+    //   controlsB.enabled = !event.value // true = 停止拖拽，false = 正在拖拽
+    // })
+
+    // scene.add(transformControls)
+
     // 坐标轴
     const axesHelper = new THREE.AxesHelper(20)
     scene.add(axesHelper)
+    // 3维箭头
+    const dir = new THREE.Vector3(1, 1, 1)
+    dir.normalize() // 规范化方向向量
+    const arrowHelper = new THREE.ArrowHelper(dir, new THREE.Vector3(0, 0, 8), 4, 'yellow', 2, 1)
+    scene.add(arrowHelper)
     // 网格
     const gridHelper = new THREE.GridHelper(40, 40)
     gridHelper.rotation.x = Math.PI / 2
@@ -102,8 +127,13 @@
     sphere.position.set(0, 0, 4)
     sphere.castShadow = true
     scene.add(sphere)
+    // 包围盒
+    const box = new THREE.BoxHelper(sphere)
+    scene.add(box)
+    // 绑定 TransformControls 到目标对象
+    // transformControls.attach(sphere)
 
-    // // 节
+    // 节
     const torusKnot = new THREE.Mesh(
       new THREE.TorusKnotGeometry(1, 0.4, 128, 32, 2, 3),
       new THREE.MeshStandardMaterial({
@@ -201,11 +231,16 @@
 
     // 背景
     const bg = new THREE.Mesh(
-      new THREE.PlaneGeometry(40, 40),
+      new THREE.PlaneGeometry(20, 20),
       new THREE.MeshStandardMaterial({ color: '#C3D8FF', roughness: 0.5, metalness: 0.3, side: THREE.DoubleSide })
     )
     bg.receiveShadow = true
     scene.add(bg)
+
+    // plane辅助对象
+    // const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 1)
+    // const bgHelper = new THREE.PlaneHelper(plane, 24)
+    // scene.add(bgHelper)
 
     // // 平行光
     const directionalLight = new THREE.DirectionalLight('#fff', 10)
@@ -222,12 +257,24 @@
     directionalLight.shadow.mapSize.width = 2048 //阴影分辨率
     directionalLight.shadow.mapSize.height = 2048
     scene.add(directionalLight)
+    // 平行光辅助对象
+    const directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight, 5)
+    scene.add(directionalLightHelper)
+
+    // 极坐标辅助对象
+    // const polarGridHelper = new THREE.PolarGridHelper(5, 5, 6, 32)
+    // polarGridHelper.position.set(0, 0, 8)
+    // polarGridHelper.rotation.x = Math.PI / 2
+    // scene.add(polarGridHelper)
+
     // 环境光
     // const ambientLight = new THREE.AmbientLight('red', 0.3)
     // scene.add(ambientLight)
     // 天际线光
     // const hemisphereLight = new THREE.HemisphereLight('white', 'darkslategrey', 5)
     // scene.add(hemisphereLight)
+    // const hemisphereLightHelper = new THREE.HemisphereLightHelper(hemisphereLight, 24)
+    // scene.add(hemisphereLightHelper)
     // 点光
     const pointLight = new THREE.PointLight('#fff', 1000)
     pointLight.position.set(3, -3, 8)
@@ -235,6 +282,31 @@
     pointLight.shadow.mapSize.width = 2048 //阴影分辨率
     pointLight.shadow.mapSize.height = 2048
     scene.add(pointLight)
+    // 点光辅助对象
+    const pointLightHelper = new THREE.PointLightHelper(pointLight, 0.5)
+    scene.add(pointLightHelper)
+
+    // lil-gui
+    let preset = {}
+    const settings = {
+      amplitude: 0.5,
+      savePreset() {
+        preset = gui.save()
+        loadButton.enable()
+      },
+      loadPreset() {
+        gui.load(preset)
+      },
+    }
+    // 添加控件
+    gui.add(pointLight, 'intensity', 100, 2000).name('pointLightIntensity')
+    gui.add(cameraA.position, 'z', 0, 100).name('cameraAPosition')
+    const folder = gui.addFolder('Settings')
+    folder.add(settings, 'amplitude', 0, 1, 0.1).name('amplitude')
+
+    gui.add(settings, 'savePreset')
+    const loadButton = gui.add(settings, 'loadPreset')
+    loadButton.disable()
 
     // 响应式
     window.addEventListener('resize', () => {
@@ -258,7 +330,7 @@
       group.rotation.z += Math.PI * deltaTime * 0.1 // 10s一圈
 
       group.children.forEach((sphere, index) => {
-        const offset = index * 0.5
+        const offset = index * settings.amplitude
         sphere.position.z = Math.sin(Math.PI * (time! * 0.001 + offset)) * 1.2
       })
 
@@ -282,6 +354,10 @@
       renderer.render(scene, cameraB)
     }
     animete()
+  })
+
+  onUnmounted(() => {
+    gui.destroy()
   })
 </script>
 
