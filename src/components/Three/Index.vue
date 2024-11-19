@@ -76,19 +76,6 @@
     })
     arcballControls.update()
 
-    // 变换控制器
-    // const transformControls = new TransformControls(cameraB, canvas)
-    // transformControls.setMode('translate')
-    // transformControls.showX = true // 显示 X 轴
-    // transformControls.showY = true // 显示 Y 轴
-    // transformControls.showZ = true // 显示 Z 轴
-
-    // transformControls.addEventListener('dragging-changed', event => {
-    //   controlsB.enabled = !event.value // true = 停止拖拽，false = 正在拖拽
-    // })
-
-    // scene.add(transformControls)
-
     // 坐标轴
     const axesHelper = new THREE.AxesHelper(20)
     scene.add(axesHelper)
@@ -130,8 +117,14 @@
     // 包围盒
     const box = new THREE.BoxHelper(sphere)
     scene.add(box)
-    // 绑定 TransformControls 到目标对象
-    // transformControls.attach(sphere)
+
+    // 变换控制器
+    const transformControls = new TransformControls(cameraB, renderer.domElement)
+
+    transformControls.setMode('translate')
+    transformControls.attach(sphere)
+    const gizmo = transformControls.getHelper()
+    scene.add(gizmo)
 
     // 节
     const torusKnot = new THREE.Mesh(
