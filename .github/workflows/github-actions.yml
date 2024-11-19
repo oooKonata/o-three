@@ -1,31 +1,31 @@
-# Simple workflow for deploying static content to GitHub Pages
-name: o-three Pages
+# 工作流名称
+name: Deploy o-three to Github Pages
 
+# 工作流运行名称
+run-name: Deploy o-three to Github Pages by @${{ github.actor }}
+
+# 触发工作流
 on:
-  # Runs on pushes targeting the default branch
   push:
-
-  # Allows you to run this workflow manually from the Actions tab
+    branches:
+      - main # 当推送到 main 分支时触发部署
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+# GITHUB_TOKEN 的默认权限
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+# 控制工作流是否并发
 concurrency:
   group: 'pages'
-  cancel-in-progress: false
-
+  cancel-in-progress: true # 取消并发
 jobs:
-  # Single deploy job since we're just deploying
-  deploy:
+  deploy: # job名称
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      # url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
