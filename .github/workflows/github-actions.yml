@@ -1,5 +1,5 @@
 name: ooo-three Gitgub-Actions-Starter
-run-name: ${{ github.actor }} ‘s ooo-three 🚀
+run-name: ${{ github.actor }} ‘s ooo-three
 on: [push]
 jobs:
   myJob_01:
