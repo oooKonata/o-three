@@ -1,5 +1,5 @@
 name: ooo-three Gitgub-Actions-Starter
-run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+run-name: ${{ github.actor }} ‘s ooo-three 🚀
 on: [push]
 jobs:
   Explore-GitHub-Actions:
